@@ -1,0 +1,53 @@
+{
+    "oscConfig":
+    {
+        "IP": "192.168.1.6",
+        "laptopIP": "192.168.1.6",
+        "motuIP": "192.168.1.166",
+        "port": "9998",
+        "midiDeviceInput":"CME U2MIDI:CME U2MIDI MIDI 1 20:0",
+        "midiChannelInput":"16",
+        "control_change":
+        {
+            "50":
+            {
+                "type":"command",
+                "command":"reloadConfig"
+            },
+            "51":
+            {
+                "type":"osc",
+                "multi":"1",
+                "address":"/mix/group/0/matrix/mute",
+                "min":"0",
+                "max":"1"
+            },
+            "52":
+            {
+                "type":"osc",
+                "multi":"1",
+                "address":"/mix/group/4/matrix/mute",
+                "min":"0",
+                "max":"1"
+            },
+            "1": ["mix1", "mix2"]
+        },
+        "note_on":
+        {
+            "60":
+            {
+                "type":"command",
+                "command":"reloadConfig"
+            },
+            "61":
+            {
+                "type":"osc",
+                "multi":"1",
+                "address":"/mix/group/4/matrix/mute",
+                "min":"0",
+                "max":"1"
+            }
+        }
+    }
+}
+
