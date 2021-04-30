@@ -151,7 +151,7 @@ print getMIDIInputDevice()
 print "Listening on channel: "
 print getMIDIInputChannel()
 
-debugCommands()
+#debugCommands()
 
 #todo: need to catch and handle more types
 #		neater handling
