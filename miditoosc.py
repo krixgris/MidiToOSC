@@ -1,3 +1,6 @@
+#Project URL for information/contact https://github.com/krixgris/MidiToOSC
+#
+
 import mido
 import OSC
 import json

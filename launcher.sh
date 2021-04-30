@@ -1,6 +1,7 @@
 #!/bin/sh
 # launcher.sh
 # navigate to home directory, then to this directory, then execute python script, then back home
+# Project URL https://github.com/krixgris/MidiToOSC
 
 #this is launched on reboot after 60 seconds by this statement in crontab
 #@reboot sleep 60 && sh /home/pi/MidiToOSC/launcher.sh >/home/pi/logs/cronlog 2>&1
