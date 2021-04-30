@@ -7,3 +7,7 @@ This should run on anything that have the above python modules though I would im
 
 I included a commented launcher.sh that I use to automatically launch the script on reboot of the pi.
 Set it up using a guide on https://www.instructables.com/Raspberry-Pi-Launch-Python-script-on-startup/
+
+Note (literally):
+If you have no way to reload the configuration because you messed up your config, the config will be reloaded if you send a note_on with velocity 126 on any channel.
+This will/should be updated to a smarter panic solution, but not sure when that would happen.
