@@ -4,6 +4,7 @@
 import mido
 import OSC
 import json
+from datetime import datetime
 
 configFile = 'oscconfig.json'
 osc = OSC.OSCClient()
@@ -13,7 +14,7 @@ def reloadConfig():
 	global config
 	config = readConfig(configFile)
 	reconnectOSC()
-	print("Configuration updated")
+	print(str(datetime.now()) + " Configuration updated")
 	print(config)
 
 #reads configuration from oscconfig.json in the same dir as the python-script
@@ -151,7 +152,7 @@ print ""
 
 print "Listening on device: "
 print getMIDIInputDevice()
-print "Listening on channel: "
+print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print getMIDIInputChannel()
 
 #debugCommands()
@@ -174,7 +175,8 @@ with mido.open_input(getMIDIInputDevice()) as inport:
 				mtoAction(msg.control, msg.value, msg.type)
 			if(msg.type == 'note_on'):
 				mtoAction(msg.note, msg.velocity, msg.type)
-			print(msg)
+			#debug handling to control print
+			#print(msg)
 		#'panic' reconfigure listen to any note_on events at velocity 126
 		# very temporary
 		if(msg.type == 'note_on' and msg.velocity == 126):

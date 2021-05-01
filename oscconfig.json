@@ -7,7 +7,7 @@
         "motuIP": "192.168.1.167",
         "port": "9998",
         "midiDeviceInput":"CME U2MIDI:CME U2MIDI MIDI 1 20:0",
-        "midiChannelInput":"16",
+        "midiChannelInput":"5",
         "control_change":
         {
             "50":
@@ -28,6 +28,14 @@
                 "type":"osc",
                 "multi":"1",
                 "address":"/mix/group/4/matrix/mute",
+                "min":"0",
+                "max":"1"
+            },
+            "62":
+            {
+                "type":"osc",
+                "multi":"1",
+                "address":"/mix/group/4/matrix/aux/0/send",
                 "min":"0",
                 "max":"1"
             },
