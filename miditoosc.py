@@ -16,13 +16,26 @@ conf = configHandler.configHandler(configFile=configFile)
 osc = OSC.OSCClient()
 http = httpHandler.httpHandler()
 
+def MidiEvent(midiNum, midiType):
+	midiNum = str(midiNum)
+	if (midiType == 'control_change'):
+		return configHandler.MidiEvent(conf.control_change.get(midiNum))
+	if (midiType == 'note_on'):
+		return configHandler.MidiEvent(conf.note_on.get(midiNum))
+	if (midiType == 'note_off'):
+		return configHandler.MidiEvent(conf.note_on.get(midiNum))
+
 def reloadConfig():
 	global conf
 	conf = configHandler.configHandler(configFile=configFile)
 	reconnectOSC()
 	reconnectHTTP()
 	print(str(datetime.now()) + " Configuration updated")
-	print(conf)
+	print conf
+
+def quitViolently():
+	print "Quitting violently!"
+	quit()
 
 #reads configuration from oscconfig.json in the same dir as the python-script
 #can be read while running to reconfigure parameters
@@ -34,21 +47,21 @@ def reloadConfig():
 
 #reconnects the OSC object to ip/port in config
 def reconnectOSC():
-	osc.connect((conf.IP,int(conf.port)))
+	osc.connect((str(conf.IP),int(conf.port)))
 
 def reconnectHTTP():
-	http.setIP(conf.IP)
+	http.setIP(str(conf.IP))
 
 #depr?
 def getMIDIInputDevice():
 	#todo: defaults, mido.get_input_names()[0]
 	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
-	return str(config['oscConfig']['midiDeviceInput'])
+	return str(conf.midiDeviceInput)
 
 #depr?
 def getMIDIInputChannel():
 	#todo: defaults, 0
-	return int(config['oscConfig']['midiChannelInput'])-1
+	return int(conf.midiChannelInput)-1
 
 def createOscMessage(address, val):
 	oscMsg = OSC.OSCMessage()
@@ -57,31 +70,25 @@ def createOscMessage(address, val):
 	return oscMsg
 
 def getType(midiNum, midiType):
-	mtoData = config['oscConfig'][str(midiType)].get(str(midiNum))
-	mtoType = ''
-	if(mtoData is None):
-		mtoType = 'None'
-	else:
-		mtoType = mtoData.get("type")
-	return mtoType
+	return MidiEvent(midiNum,midiType).type
 
 def getAttribute(midiNum, midiType):
-	mtoData = config['oscConfig'][str(midiType)].get(str(midiNum))
-	mtoType = ''
-	if(mtoData is None):
+	mtoType = MidiEvent(midiNum,midiType).attribute
+	if(mtoType is None):
 		mtoType = 'value'
-	else:
-		mtoType = mtoData.get("attribute")
 	return mtoType
 
 
 def mtoAction(midiNum, midiValue, midiType):
+	#print getType(midiNum, midiType)
 	if(getType(midiNum, midiType) == 'osc'):
 		mtoOSC(midiNum, midiValue, midiType)
 		return 1
 	if(getType(midiNum,midiType) == 'command'):
 		if(getCommand(midiNum, midiType) == 'reloadConfig'):
 			reloadConfig()
+		if(getCommand(midiNum, midiType) == 'quitLoop'):
+			quitViolently()
 		return 2
 	if(getType(midiNum, midiType) == 'http'):
 		mtoHTTP(midiNum, midiValue, midiType)
@@ -92,6 +99,7 @@ def mtoCommand(midiNum,midiType):
 	return 0
 
 def mtoOSC(midiNum, midiValue, midiType):
+	#print getOscMessage(midiNum, midiValue, midiType)
 	osc.send(getOscMessage(midiNum, midiValue, midiType))
 	return 0
 
@@ -118,7 +126,7 @@ def mtoType(argument):
 
 def getCommand(midiNum, midiType):
 	if(getType(midiNum, midiType) == 'command'):
-		return config['oscConfig'][str(midiType)][str(midiNum)].get('command')
+		return MidiEvent(midiNum,midiType).command
 	else:
 		return 0
 
@@ -129,16 +137,20 @@ def isCC_OSC(midiNum, midiType):
 		return 0
 
 def getOSCAddress(midiNum, midiType):
-	oscaddress = str(config['oscConfig'][str(midiType)][str(midiNum)]['address'])
+	
+	oscaddress = MidiEvent(midiNum,midiType).address
 	return oscaddress
 
 def getOSCValue(midiNum, midiValue, midiType):
-	oscMin = float(config['oscConfig'][str(midiType)][str(midiNum)]['min'])
-	oscMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
+	oscMin = float(MidiEvent(midiNum,midiType).min)
+	oscMax = float(MidiEvent(midiNum,midiType).max)
 	return (oscMax-oscMin)/127.0*midiValue+oscMin
 
 def getHTTPAddress(midiNum, midiType):
-	address = str(config['oscConfig'][str(midiType)][str(midiNum)]['address'])
+	#old
+	#address = str(config['oscConfig'][str(midiType)][str(midiNum)]['address'])
+	#new
+	address = MidiEvent(midiNum,midiType).address
 	return address
 
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
@@ -150,8 +162,8 @@ def getHTTPValueAttribute(midiNum, midiValue, midiType):
 	return valAttr
 
 def getHTTPValue(midiNum, midiValue, midiType):
-	valMin = float(config['oscConfig'][str(midiType)][str(midiNum)]['min'])
-	valMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
+	valMin = float(MidiEvent(midiNum,midiType).min)
+	valMax = float(MidiEvent(midiNum,midiType).max)
 	return (valMax-valMin)/127.0*midiValue+valMin
 
 """ 
@@ -187,9 +199,15 @@ def debugCommands():
 
 reloadConfig()
 
-print dir(conf)
+reconnectOSC()
+reconnectHTTP()
 
-osc.connect((conf.IP,int(conf.port)))
+print conf.IP
+print conf.port
+print conf
+#print dir(conf)
+
+osc.connect((str(conf.IP),int(conf.port)))
 
 print ""
 print "Available MIDI Inputs: "
@@ -201,11 +219,13 @@ print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
 
-#debugCommands()
+#mtoAction(52,127,'control_change')
 
+
+#debugCommands()
 with mido.open_input(conf.midiDeviceInput) as inport:
 	for msg in inport:
-		if(getattr(msg, 'channel', None)==conf.midiChannelInput):
+		if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
 			if(msg.type == 'control_change'):
 				mtoAction(msg.control, msg.value, msg.type)
 			if(msg.type == 'note_on'):
@@ -216,3 +236,8 @@ with mido.open_input(conf.midiDeviceInput) as inport:
 		# very temporary
 		if(msg.type == 'note_on' and msg.velocity == 126):
 			reloadConfig()
+		#print(msg)
+			#quitViolently()
+			#print "quit() called, ending listening loop"
+			#quit()
+			

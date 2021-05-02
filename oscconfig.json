@@ -3,7 +3,7 @@
     {
         "projectURL":"https://github.com/krixgris/MidiToOSC",
         "IP": "192.168.1.167",
-        "laptopIP": "192.168.1.6",
+        "laptopIP": "192.168.1.16",
         "motuIP": "192.168.1.167",
         "port": "9998",
         "midiDeviceInput":"CME U2MIDI:CME U2MIDI MIDI 1 20:0",
@@ -18,19 +18,19 @@
             },
             "51":
             {
-                "type":"http",
+                "type":"osc",
                 "attribute":"value",
                 "multi":"1",
-                "address":"/datastore/mix/group/0/matrix/mute",
+                "address":"/mix/group/0/matrix/mute",
                 "min":"0",
                 "max":"1"
             },
             "52":
             {
-                "type":"osc",
+                "type":"http",
                 "attribute":"value",
                 "multi":"1",
-                "address":"/mix/group/4/matrix/mute",
+                "address":"/datastore/mix/group/4/matrix/mute",
                 "min":"0",
                 "max":"1"
             },
@@ -54,6 +54,11 @@
             "64":
             {
                 "type":"http"               
+            },
+            "127":
+            {
+                "type":"command",
+                "command":"quitLoop"
             }
         },
         "note_on":
