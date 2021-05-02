@@ -6,53 +6,46 @@ import OSC
 import json
 from datetime import datetime
 
+import configHandler
 import httpHandler
 
+
 configFile = 'oscconfig.json'
+conf = configHandler.configHandler(configFile=configFile)
+
 osc = OSC.OSCClient()
-config = object
 http = httpHandler.httpHandler()
 
 def reloadConfig():
-	global config
-	config = readConfig(configFile)
+	global conf
+	conf = configHandler.configHandler(configFile=configFile)
 	reconnectOSC()
 	reconnectHTTP()
 	print(str(datetime.now()) + " Configuration updated")
-	print(config)
+	print(conf)
 
 #reads configuration from oscconfig.json in the same dir as the python-script
 #can be read while running to reconfigure parameters
-def readConfig(fileName):
-	f = open(fileName)
-	data = json.load(f)
-	f.close()
-	return data
+#def readConfig(fileName):
+#	f = open(fileName)
+#	data = json.load(f)
+#	f.close()
+#	return data
 
 #reconnects the OSC object to ip/port in config
 def reconnectOSC():
-	ip = str(config['oscConfig']['IP'])
-	port = int(config['oscConfig']['port'])
-	osc.connect((ip,port))
+	osc.connect((conf.IP,int(conf.port)))
 
 def reconnectHTTP():
-	ip = str(config['oscConfig']['IP'])
-	port = int(config['oscConfig']['port'])
-	http.setIP(ip)
+	http.setIP(conf.IP)
 
-def getOSCIP():
-	#todo: defaults
-	return str(config['oscConfig']['IP'])
-
-def getOSCPort():
-	#todo: defaults
-	return int(config['oscConfig']['port'])
-
+#depr?
 def getMIDIInputDevice():
 	#todo: defaults, mido.get_input_names()[0]
 	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
 	return str(config['oscConfig']['midiDeviceInput'])
 
+#depr?
 def getMIDIInputChannel():
 	#todo: defaults, 0
 	return int(config['oscConfig']['midiChannelInput'])-1
@@ -192,9 +185,11 @@ def debugCommands():
 	mtoAction(61,127,'note_on')
 
 
-#config = readConfig(configFile)
 reloadConfig()
-osc.connect((getOSCIP(),getOSCPort()))
+
+print dir(conf)
+
+osc.connect((conf.IP,int(conf.port)))
 
 print ""
 print "Available MIDI Inputs: "
@@ -202,27 +197,15 @@ print mido.get_input_names()
 print ""
 
 print "Listening on device: "
-print getMIDIInputDevice()
+print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
-print getMIDIInputChannel()
+print conf.midiChannelInput
 
 #debugCommands()
 
-#todo: need to catch and handle more types
-#		neater handling
-#		proper handling function to make it clearer to read
-#
-#	#print(msg.type)
-#	#print(msg.value)
-#	#print(msg.note)
-#	#print(msg.control)
-#if(msg.channel==15):
-
-#curlhandler.doCurlyThings()
-
-with mido.open_input(getMIDIInputDevice()) as inport:
+with mido.open_input(conf.midiDeviceInput) as inport:
 	for msg in inport:
-		if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
+		if(getattr(msg, 'channel', None)==conf.midiChannelInput):
 			if(msg.type == 'control_change'):
 				mtoAction(msg.control, msg.value, msg.type)
 			if(msg.type == 'note_on'):
@@ -233,8 +216,3 @@ with mido.open_input(getMIDIInputDevice()) as inport:
 		# very temporary
 		if(msg.type == 'note_on' and msg.velocity == 126):
 			reloadConfig()
-		#if(msg.type == 'note_on'):
-		#	print(msg)
-		#	config = readConfig(configFile)
-		#if(isDebug()):
-		#	print(msg)
