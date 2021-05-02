@@ -6,14 +6,18 @@ import OSC
 import json
 from datetime import datetime
 
+import httpHandler
+
 configFile = 'oscconfig.json'
 osc = OSC.OSCClient()
 config = object
+http = httpHandler.httpHandler()
 
 def reloadConfig():
 	global config
 	config = readConfig(configFile)
 	reconnectOSC()
+	reconnectHTTP()
 	print(str(datetime.now()) + " Configuration updated")
 	print(config)
 
@@ -30,6 +34,11 @@ def reconnectOSC():
 	ip = str(config['oscConfig']['IP'])
 	port = int(config['oscConfig']['port'])
 	osc.connect((ip,port))
+
+def reconnectHTTP():
+	ip = str(config['oscConfig']['IP'])
+	port = int(config['oscConfig']['port'])
+	http.setIP(ip)
 
 def getOSCIP():
 	#todo: defaults
@@ -63,6 +72,16 @@ def getType(midiNum, midiType):
 		mtoType = mtoData.get("type")
 	return mtoType
 
+def getAttribute(midiNum, midiType):
+	mtoData = config['oscConfig'][str(midiType)].get(str(midiNum))
+	mtoType = ''
+	if(mtoData is None):
+		mtoType = 'value'
+	else:
+		mtoType = mtoData.get("attribute")
+	return mtoType
+
+
 def mtoAction(midiNum, midiValue, midiType):
 	if(getType(midiNum, midiType) == 'osc'):
 		mtoOSC(midiNum, midiValue, midiType)
@@ -71,6 +90,9 @@ def mtoAction(midiNum, midiValue, midiType):
 		if(getCommand(midiNum, midiType) == 'reloadConfig'):
 			reloadConfig()
 		return 2
+	if(getType(midiNum, midiType) == 'http'):
+		mtoHTTP(midiNum, midiValue, midiType)
+		return 1
 	return 0
 
 def mtoCommand(midiNum,midiType):
@@ -78,6 +100,17 @@ def mtoCommand(midiNum,midiType):
 
 def mtoOSC(midiNum, midiValue, midiType):
 	osc.send(getOscMessage(midiNum, midiValue, midiType))
+	return 0
+
+def mtoHTTP(midiNum, midiValue, midiType):
+	#osc.send(getOscMessage(midiNum, midiValue, midiType))
+	#print getHTTPValue(midiNum,midiValue,midiType)
+	#print getHTTPValueAttribute(midiNum,midiValue,midiType)
+	data = http.getValueList(getHTTPValueAttribute(midiNum,midiValue,midiType), getHTTPValue(midiNum,midiValue,midiType))
+	#print data
+	#print getHTTPAddress(midiNum,midiType)
+	#print "patchdata time here"
+	http.patchData(getHTTPAddress(midiNum,midiType), data)
 	return 0
 
 #decided against using the cc_OSC as a json-config makes more sense
@@ -110,6 +143,24 @@ def getOSCValue(midiNum, midiValue, midiType):
 	oscMin = float(config['oscConfig'][str(midiType)][str(midiNum)]['min'])
 	oscMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
 	return (oscMax-oscMin)/127.0*midiValue+oscMin
+
+def getHTTPAddress(midiNum, midiType):
+	address = str(config['oscConfig'][str(midiType)][str(midiNum)]['address'])
+	return address
+
+def getHTTPValueAttribute(midiNum, midiValue, midiType):
+	valAttr = getAttribute(midiNum, midiType)
+	#print valAttr
+	if (valAttr is None):
+		valAttr = 'value'
+	#valMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
+	return valAttr
+
+def getHTTPValue(midiNum, midiValue, midiType):
+	valMin = float(config['oscConfig'][str(midiType)][str(midiNum)]['min'])
+	valMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
+	return (valMax-valMin)/127.0*midiValue+valMin
+
 """ 
     float oscVal = (float) oscUIDial.getValue();
     float oscScaled = 4*(1 - (log(oscVal)/log(0.0001)));
@@ -167,6 +218,7 @@ print getMIDIInputChannel()
 #	#print(msg.control)
 #if(msg.channel==15):
 
+#curlhandler.doCurlyThings()
 
 with mido.open_input(getMIDIInputDevice()) as inport:
 	for msg in inport:
