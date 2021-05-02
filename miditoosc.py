@@ -19,11 +19,20 @@ http = httpHandler.httpHandler()
 def MidiEvent(midiNum, midiType):
 	midiNum = str(midiNum)
 	if (midiType == 'control_change'):
-		return configHandler.MidiEvent(conf.control_change.get(midiNum))
+		if(conf.control_change.get(midiNum) is None):
+			return configHandler.MidiEvent(conf.dummy_midievent)
+		midiEvent = configHandler.MidiEvent(conf.control_change.get(midiNum))
 	if (midiType == 'note_on'):
-		return configHandler.MidiEvent(conf.note_on.get(midiNum))
+		if(conf.note_on.get(midiNum) is None):
+			return configHandler.MidiEvent(conf.dummy_midievent)
+		midiEvent = configHandler.MidiEvent(conf.note_on.get(midiNum))
 	if (midiType == 'note_off'):
-		return configHandler.MidiEvent(conf.note_on.get(midiNum))
+		if(conf.note_on.get(midiNum) is None):
+			return configHandler.MidiEvent(conf.dummy_midievent)
+		midiEvent = configHandler.MidiEvent(conf.note_on.get(midiNum))
+	if(midiEvent is None):
+		return configHandler.MidiEvent(conf.dummy_midievent)
+	return midiEvent
 
 def reloadConfig():
 	global conf
@@ -70,7 +79,11 @@ def createOscMessage(address, val):
 	return oscMsg
 
 def getType(midiNum, midiType):
-	return MidiEvent(midiNum,midiType).type
+	mtoType = MidiEvent(midiNum,midiType).type
+	if(mtoType is None):
+		mtoType = ''
+	return mtoType
+	#return MidiEvent(midiNum,midiType).type
 
 def getAttribute(midiNum, midiType):
 	mtoType = MidiEvent(midiNum,midiType).attribute
@@ -220,7 +233,7 @@ print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
 
 #mtoAction(52,127,'control_change')
-
+mtoAction(22,127,'control_change')
 
 #debugCommands()
 with mido.open_input(conf.midiDeviceInput) as inport:
