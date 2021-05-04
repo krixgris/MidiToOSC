@@ -23,17 +23,16 @@
                 "attribute":"value",
                 "multi":1,
                 "address":"/mix/group/0/matrix/mute",
-                "min":0.0,
+                "min":0,
                 "max":1.0
             },
             "52":
             {
                 "type":"http",
                 "attribute":"value",
-                "description":"Blanks",
                 "multi":1,
                 "address":"/datastore/mix/group/4/matrix/mute",
-                "min":0.0,
+                "min":0,
                 "max":1.0
             },
             "62":

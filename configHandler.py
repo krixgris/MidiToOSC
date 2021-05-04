@@ -22,16 +22,16 @@ class MidiEvent:
     #better way to handle new attributes?
     def __init__(self, midiEvent):
         if(midiEvent is None):
-            midiEvent = dummy_midievent
+            midiEvent = dict({'type':'dummy'})
         self.__dict__ = midiEvent
-        self.type = midiEvent.get('type')
-        self.command = midiEvent.get('command')
-        self.address = midiEvent.get('address')
-        self.description = midiEvent.get('description')
-        self.max = midiEvent.get('max')
-        self.min = midiEvent.get('min')
-        self.attribute = midiEvent.get('attribute')
-        self.multi = midiEvent.get('multi')
+        self.type = midiEvent.get('type','Undefined')
+        self.command = midiEvent.get('command','Undefined')
+        self.address = midiEvent.get('address','Undefined')
+        self.description = midiEvent.get('description','Undefined')
+        self.max = midiEvent.get('max',1.0)
+        self.min = midiEvent.get('min',0.0)
+        self.attribute = midiEvent.get('attribute','Undefined')
+        self.multi = midiEvent.get('multi',1)
     def __str__(self):
             return str(self.__class__) + ": " + str(self.__dict__)
 
