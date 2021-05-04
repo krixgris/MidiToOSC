@@ -4,6 +4,16 @@
 #
 import json
 
+dummy_midievent = {'type':'Undefined'
+                    ,'command':''
+                    ,'address':''
+                    ,'description':''
+                    ,'max':1.0
+                    ,'min':0.0
+                    ,'attribute':''
+                    ,'multi':0
+                    }
+
 class MidiEvent:
     #todo: do we need to handle undefined, or incorrectly defined events?
     #enough with them being defaulted to None?
@@ -11,28 +21,17 @@ class MidiEvent:
     #
     #better way to handle new attributes?
     def __init__(self, midiEvent):
-        try:
-            self.__dict__ = midiEvent
-            self.type = getattr(midiEvent, 'type','Undefined')
-            self.command = getattr(midiEvent, 'command','Undefined')
-            self.address = getattr(midiEvent, 'address','Undefined')
-            self.description = getattr(midiEvent, 'description','Undefined')
-            self.max = getattr(midiEvent, 'max', 0.0)
-            self.min = getattr(midiEvent, 'min',0.0)
-            self.attribute = getattr(midiEvent, 'attribute','Undefined')
-            self.multi = getattr(midiEvent, 'multi',0)
-            #self.midiEvent = midiEvent
-        except:
-            #Undefined dummy created
-            self.type = 'Undefined'
-            self.command = 'Undefined'
-            self.address = 'Undefined'
-            self.description = 'Undefined'
-            self.max = 0.0
-            self.min = 0.0
-            self.attribute = 'Undefined'
-            self.multi = 0
-            #self.midiEvent = 'Undefined'
+        if(midiEvent is None):
+            midiEvent = dummy_midievent
+        self.__dict__ = midiEvent
+        self.type = midiEvent.get('type')
+        self.command = midiEvent.get('command')
+        self.address = midiEvent.get('address')
+        self.description = midiEvent.get('description')
+        self.max = midiEvent.get('max')
+        self.min = midiEvent.get('min')
+        self.attribute = midiEvent.get('attribute')
+        self.multi = midiEvent.get('multi')
     def __str__(self):
             return str(self.__class__) + ": " + str(self.__dict__)
 
