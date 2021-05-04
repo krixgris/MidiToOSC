@@ -52,34 +52,41 @@ def reconnectHTTP():
 	http.setIP(conf.IP)
 
 #depr?
-def getMIDIInputDevice():
-	#todo: defaults,? mido.get_input_names()[0]?
-	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
-	return conf.midiDeviceInput
+# def getMIDIInputDevice():
+# 	#todo: defaults,? mido.get_input_names()[0]?
+# 	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
+# 	return conf.midiDeviceInput
 
 #depr?
+#keep for now, to be able to set config to the actual midi channel, and not 0-15
 def getMIDIInputChannel():
 	#todo: defaults?, 0?
 	return conf.midiChannelInput-1
 
-def createOscMessage(address, val):
-	oscMsg = OSC.OSCMessage()
-	oscMsg.setAddress(address)
-	oscMsg.append(float(val))
-	return oscMsg
+# def createOSCMessage(address, val):
+# 	oscMsg = OSC.OSCMessage()
+# 	oscMsg.setAddress(address)
+# 	oscMsg.append(float(val))
+# 	return oscMsg
 
-def getType(midiNum, midiType):
-	midiEventEvent = MidiEvent(midiNum,midiType).type
-	if(midiEventEvent is None):
-		midiEventEvent = ''
-	return midiEventEvent
+# def getType(midiNum, midiType):
+# 	midiEventEvent = MidiEvent(midiNum,midiType).type
+# 	if(midiEventEvent is None):
+# 		midiEventEvent = ''
+# 	return midiEventEvent
 	#return MidiEvent(midiNum,midiType).type
 
-def getAttribute(midiNum, midiType):
-	midiEventAttribute = MidiEvent(midiNum,midiType).attribute
-	if(midiEventAttribute is None):
-		midiEventAttribute = 'value'
-	return midiEventAttribute
+# def getAttribute(midiNum, midiType):
+# 	midiEventAttribute = MidiEvent(midiNum,midiType).attribute
+# 	if(midiEventAttribute is None):
+# 		midiEventAttribute = 'value'
+# 	return midiEventAttribute
+
+# def getCommand(midiNum, midiType):
+# 	if(getType(midiNum, midiType) == 'command'):
+# 		return MidiEvent(midiNum,midiType).command
+# 	else:
+# 		return 0
 
 #generic handler?
 def mtoAction(midiNum, midiValue, midiType):
@@ -93,6 +100,16 @@ def mtoAction(midiNum, midiValue, midiType):
 	if(midiEventType == 'command'):
 		mtoCommand(midiNum, midiValue, midiType)
 
+def mtoOSC(midiNum, midiValue, midiType):
+	osc.send(getOSCMessage(midiNum, midiValue, midiType))
+
+def mtoHTTP(midiNum, midiValue, midiType):
+	#http can technically send batches of data with json, but only one parameter is currently supported
+	data = http.getValueList(getHTTPValueAttribute(midiNum,midiValue,midiType), getEventValue(midiNum,midiValue,midiType))
+	#print data
+	#print getHTTPAddress(midiNum,midiType)
+	http.patchData(getEventAddress(midiNum,midiType), data)
+
 def mtoCommand(midiNum, midiValue, midiType):
 	midiEventCommand = MidiEvent(midiNum, midiType).command
 	if(midiEventCommand == 'reloadConfig'):
@@ -100,50 +117,35 @@ def mtoCommand(midiNum, midiValue, midiType):
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
 
-def mtoOSC(midiNum, midiValue, midiType):
-	osc.send(getOscMessage(midiNum, midiValue, midiType))
 
-def mtoHTTP(midiNum, midiValue, midiType):
-	#http can technically send batches of data with json, but only one parameter is currently supported
-	data = http.getValueList(getHTTPValueAttribute(midiNum,midiValue,midiType), getHTTPValue(midiNum,midiValue,midiType))
-	#print data
-	#print getHTTPAddress(midiNum,midiType)
-	http.patchData(getHTTPAddress(midiNum,midiType), data)
-
-def getCommand(midiNum, midiType):
-	if(getType(midiNum, midiType) == 'command'):
-		return MidiEvent(midiNum,midiType).command
-	else:
-		return 0
 
 #depr, use generic Event-function
-def getOSCAddress(midiNum, midiType):
-	return getEventAddress(midiNum, midiType)
+# def getOSCAddress(midiNum, midiType):
+# 	return getEventAddress(midiNum, midiType)
 
 #depr, use generic Event-function
-def getOSCValue(midiNum, midiValue, midiType):
-	return getEventValue(midiNum, midiValue, midiType)
+# def getOSCValue(midiNum, midiValue, midiType):
+# 	return getEventValue(midiNum, midiValue, midiType)
 
 #depr, use generic Event-function
-def getHTTPAddress(midiNum, midiType):
-	# address = MidiEvent(midiNum,midiType).address
-	return getEventAddress(midiNum, midiType)
+# def getHTTPAddress(midiNum, midiType):
+# 	return getEventAddress(midiNum, midiType)
 
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
-	valAttr = getAttribute(midiNum, midiType)
-	#print valAttr
+	valAttr = MidiEvent(midiNum, midiType).attribute
 	if (valAttr is None):
 		valAttr = 'value'
-	#valMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
 	return valAttr
 
 #depr, use generic Event-function
-def getHTTPValue(midiNum, midiValue, midiType):
-	#valMin = float(MidiEvent(midiNum,midiType).min)
-	#valMax = float(MidiEvent(midiNum,midiType).max)
-	#return (valMax-valMin)/127.0*midiValue+valMin
-	return getEventValue(midiNum, midiValue, midiType)
+# def getHTTPValue(midiNum, midiValue, midiType):
+# 	#valMin = float(MidiEvent(midiNum,midiType).min)
+# 	#valMax = float(MidiEvent(midiNum,midiType).max)
+# 	#return (valMax-valMin)/127.0*midiValue+valMin
+# 	return getEventValue(midiNum, midiValue, midiType)
 
+#todo: implement scaling options for lin/log/exp
+#already defined in config-file and configHandler
 def getEventValue(midiNum, midiValue, midiType):
 	valMin = float(MidiEvent(midiNum,midiType).min)
 	valMax = float(MidiEvent(midiNum,midiType).max)
@@ -153,22 +155,25 @@ def getEventAddress(midiNum, midiType):
 	address = MidiEvent(midiNum,midiType).address
 	return address
 
-""" 
-    float oscVal = (float) oscUIDial.getValue();
-    float oscScaled = 4*(1 - (log(oscVal)/log(0.0001)));
-   // float oscScaled = 4*(exp(oscVal)-1)/(2.71828-1);
-    float pwrOf = 200;
-    //oscScaled = 4*oscUIDial.getValue();
-    oscScaled = 4*(pow(pwrOf,oscVal)-1)/(pwrOf-1);
-    oscSendEditor.send ("/mix/chan/35/matrix/fader", (float) oscScaled); 
-"""
+#	copy pasted code from c++-plugin with tests of exponential scaling
+#
+#     float oscVal = (float) oscUIDial.getValue();
+#     float oscScaled = 4*(1 - (log(oscVal)/log(0.0001)));
+#    // float oscScaled = 4*(exp(oscVal)-1)/(2.71828-1);
+#     float pwrOf = 200;
+#     //oscScaled = 4*oscUIDial.getValue();
+#     oscScaled = 4*(pow(pwrOf,oscVal)-1)/(pwrOf-1);
+#     oscSendEditor.send ("/mix/chan/35/matrix/fader", (float) oscScaled); 
 
-def getOscMessage(midiNum, midiValue, midiType):
+
+def getOSCMessage(midiNum, midiValue, midiType):
 	oscMsg = OSC.OSCMessage()
-	oscMsg.setAddress(getOSCAddress(midiNum, midiType))
-	oscMsg.append(getOSCValue(midiNum, midiValue, midiType))
+	oscMsg.setAddress(getEventAddress(midiNum, midiType))
+	oscMsg.append(getEventValue(midiNum, midiValue, midiType))
 	return oscMsg
 
+#put debug messages to run on launch here
+#will only work if debug:1 is set in the json-config
 def debugCommands():
 	print ''
 	print 'Debug messages from debugCommand():'
@@ -187,6 +192,7 @@ print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
 
+#unused, probably getting removed
 def isDefinedMidiLookup(midiNum, midiType, midiCh = -1):
     if(midiCh == conf.midiChannelInput or midiCh == -1):
         if(midiType in conf.definedMidi.keys()):
