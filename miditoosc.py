@@ -16,9 +16,12 @@ conf = configHandler.configHandler(configFile=configFile)
 osc = OSC.OSCClient()
 http = httpHandler.httpHandler()
 
-def MidiEvent(midiNum, midiType):
-	midiNum = str(midiNum)
+#generic MidiEvent-getter, can replace getAttribute/Type/Command etc
+#returns a configHandler.MidiEvent
 
+def MidiEvent(midiNum, midiType):
+	#with no parameters, configHandler.MidiEvent() returns a dummy event
+	midiEvent = configHandler.MidiEvent()
 	if (midiType == 'control_change'):
 		midiEvent = configHandler.MidiEvent(conf.control_change.get(midiNum))
 	if (midiType == 'note_on'):
@@ -27,13 +30,16 @@ def MidiEvent(midiNum, midiType):
 		midiEvent = configHandler.MidiEvent(conf.note_off.get(midiNum))
 	return midiEvent
 
+#add support for loading custom config via config-parameters configName='oscConfig', configFile='oscconfig.json' ?
 def reloadConfig():
 	global conf
 	conf = configHandler.configHandler(configFile=configFile)
 	reconnectOSC()
 	reconnectHTTP()
 	print(str(datetime.now()) + " Configuration updated")
-	print conf.config_json
+
+	#ugly, make a nicer result at some point?
+	print conf
 
 def quitViolently():
 	print "Quitting violently!"
@@ -41,21 +47,21 @@ def quitViolently():
 
 #reconnects the OSC object to ip/port in config
 def reconnectOSC():
-	osc.connect((str(conf.IP),int(conf.port)))
+	osc.connect((conf.IP,conf.port))
 
 def reconnectHTTP():
-	http.setIP(str(conf.IP))
+	http.setIP(conf.IP)
 
 #depr?
 def getMIDIInputDevice():
-	#todo: defaults, mido.get_input_names()[0]
+	#todo: defaults,? mido.get_input_names()[0]?
 	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
-	return str(conf.midiDeviceInput)
+	return conf.midiDeviceInput
 
 #depr?
 def getMIDIInputChannel():
-	#todo: defaults, 0
-	return int(conf.midiChannelInput)-1
+	#todo: defaults?, 0?
+	return conf.midiChannelInput-1
 
 def createOscMessage(address, val):
 	oscMsg = OSC.OSCMessage()
@@ -77,52 +83,38 @@ def getAttribute(midiNum, midiType):
 	return mtoType
 
 
+#generic handler?
 def mtoAction(midiNum, midiValue, midiType):
-	print midiNum, midiValue, midiType
-	print getType(midiNum, midiType)
+	#print midiNum, midiValue, midiType
+	#print getType(midiNum, midiType)
 	if(getType(midiNum, midiType) == 'osc'):
-		print 'osc'
 		mtoOSC(midiNum, midiValue, midiType)
-		return 1
+		return 0
 	if(getType(midiNum,midiType) == 'command'):
 		if(getCommand(midiNum, midiType) == 'reloadConfig'):
 			reloadConfig()
 		if(getCommand(midiNum, midiType) == 'quitLoop'):
 			quitViolently()
-		return 2
+		return 0
 	if(getType(midiNum, midiType) == 'http'):
 		mtoHTTP(midiNum, midiValue, midiType)
-		return 1
-	return 0
+		return 0
+	return -1
 
-def mtoCommand(midiNum,midiType):
-	return 0
+#implement to run custom commands such as reload/quit etc..
+#similar to mtoAction()
+def mtoCommand(midiNum, midiValue, midiType):
+	pass
 
 def mtoOSC(midiNum, midiValue, midiType):
-	#print getOscMessage(midiNum, midiValue, midiType)
 	osc.send(getOscMessage(midiNum, midiValue, midiType))
-	return 0
 
 def mtoHTTP(midiNum, midiValue, midiType):
-	#osc.send(getOscMessage(midiNum, midiValue, midiType))
-	#print getHTTPValue(midiNum,midiValue,midiType)
-	#print getHTTPValueAttribute(midiNum,midiValue,midiType)
+	#http can technically send batches of data with json, but only one parameter is currently supported
 	data = http.getValueList(getHTTPValueAttribute(midiNum,midiValue,midiType), getHTTPValue(midiNum,midiValue,midiType))
 	#print data
 	#print getHTTPAddress(midiNum,midiType)
-	#print "patchdata time here"
 	http.patchData(getHTTPAddress(midiNum,midiType), data)
-	return 0
-
-#decided against using the cc_OSC as a json-config makes more sense
-#repurpose for command-types from json (?)
-#keeping it for lazy reference to switchers
-def mtoType(argument):
-    switcher = {
-		"osc": "osc",
-		"command": "command",
-    	}
-    return switcher.get(argument, "None")
 
 def getCommand(midiNum, midiType):
 	if(getType(midiNum, midiType) == 'command'):
@@ -130,14 +122,7 @@ def getCommand(midiNum, midiType):
 	else:
 		return 0
 
-def isCC_OSC(midiNum, midiType):
-	if(getType(midiNum, midiType) == 'osc'):
-		return 1
-	else:
-		return 0
-
 def getOSCAddress(midiNum, midiType):
-	
 	oscaddress = MidiEvent(midiNum,midiType).address
 	return oscaddress
 
@@ -147,9 +132,6 @@ def getOSCValue(midiNum, midiValue, midiType):
 	return (oscMax-oscMin)/127.0*midiValue+oscMin
 
 def getHTTPAddress(midiNum, midiType):
-	#old
-	#address = str(config['oscConfig'][str(midiType)][str(midiNum)]['address'])
-	#new
 	address = MidiEvent(midiNum,midiType).address
 	return address
 
@@ -218,17 +200,6 @@ def debugCommands():
 
 reloadConfig()
 
-reconnectOSC()
-reconnectHTTP()
-
-#print conf.IP
-#print conf.port
-#print conf.getConfig()#
-#print conf.config_json
-#print dir(conf)
-
-#osc.connect((str(conf.IP),int(conf.port)))
-
 print ""
 print "Available MIDI Inputs: "
 print mido.get_input_names()
@@ -239,16 +210,6 @@ print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
 
-#print MidiEvent(52, 'control_change')
-
-# print type(definedMidi)
-# for mtype in definedMidi:
-#     if mtype in conf.definedMidi.keys():
-#         print mtype
-#         for mnum in filter(lambda mnum: mnum in conf.definedMidi[mtype], definedMidi[mtype]):
-#             #if mnum in conf.definedMidi[mtype]
-#             print type(mnum)
-#             print mnum
 
 def isDefinedMidiLookup(midiNum, midiType, midiCh = -1):
     if(midiCh == conf.midiChannelInput or midiCh == -1):
@@ -272,13 +233,8 @@ def getMidiNum(msg):
 	return -1
 
 def isDefinedMidi(msg):
-	#print getattr(msg, 'channel', None)
 	if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
-    #if(midiCh == conf.midiChannelInput or midiCh == -1):
-		#print msg.type
 		if(msg.type in conf.definedMidi.keys()):
-			#print getMidiNum(msg)
-			#print getMidiValue(msg)
 			if(getMidiNum(msg) in conf.definedMidi[msg.type]):
 				return True
 	return False

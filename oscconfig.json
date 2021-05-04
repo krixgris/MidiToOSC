@@ -9,7 +9,7 @@
         "midiDeviceInput":"CME U2MIDI:CME U2MIDI MIDI 1 20:0",
         "midiChannelInput":5,
         "httpTimeoutMS":500,
-        "debug":1,
+        "debug":0,
         "control_change":
         {
             "50":
@@ -24,7 +24,9 @@
                 "multi":1,
                 "address":"/mix/group/0/matrix/mute",
                 "min":0,
-                "max":1.0
+                "max":1.0,
+                "valueScaling":"lin",
+                "valueScalingBase":10
             },
             "52":
             {
@@ -33,7 +35,7 @@
                 "multi":1,
                 "address":"/datastore/mix/group/4/matrix/mute",
                 "min":0,
-                "max":1.0
+                "max":1
             },
             "62":
             {
