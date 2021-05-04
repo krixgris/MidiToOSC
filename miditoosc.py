@@ -170,37 +170,9 @@ def getOscMessage(midiNum, midiValue, midiType):
 	return oscMsg
 
 def debugCommands():
-	print getType(2,'control_change')
-	print getType(52,'control_change')
-	print getType(50,'control_change')
-
-	print isCC_OSC(50,'control_change')
-	print isCC_OSC(52,'control_change')
-
-	print getCommand(60,'note_on')
-	print getCommand(61,'note_on')
-
-	mtoAction(22,127,'control_change')
-	mtoAction(61,127,'note_on')
-
-	mtoAction(52,127,'control_change')
-	mtoAction(22,127,'control_change')
-
-	print MidiEvent(22, 'control_change')
-	print MidiEvent(52, 'control_change')
-	print MidiEvent(121, 'control_change').max
-	#print conf
-
-	print type(conf.debug)
-	print type(conf.port)
-	print type(conf.IP)
-
-	print type(MidiEvent(22, 'control_change').max)
-	print type(MidiEvent(52, 'control_change').max)
-	print MidiEvent(52, 'control_change').max
-	print type(MidiEvent(121, 'control_change').max)
-	midiEvent = configHandler.MidiEvent(conf.control_change.get("52"))
-	print midiEvent
+	print ''
+	print 'Debug messages from debugCommand():'
+	print ''
 
 
 reloadConfig()
@@ -214,7 +186,6 @@ print "Listening on device: "
 print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
-
 
 def isDefinedMidiLookup(midiNum, midiType, midiCh = -1):
     if(midiCh == conf.midiChannelInput or midiCh == -1):
@@ -250,5 +221,6 @@ with mido.open_input(conf.midiDeviceInput) as inport:
 		if(isDefinedMidi(msg)):
 			mtoAction(getMidiNum(msg), getMidiValue(msg), msg.type)
 		#debug handling to control print
-		#print(msg)
-			
+		
+		if(conf.debug == 1):
+			print(msg)
