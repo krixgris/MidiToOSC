@@ -52,41 +52,10 @@ def reconnectHTTP():
 	http.setIP(conf.IP)
 
 #depr?
-# def getMIDIInputDevice():
-# 	#todo: defaults,? mido.get_input_names()[0]?
-# 	#testing with usb midi dongle 'CME U2MIDI:CME U2MIDI MIDI 1 20:0'
-# 	return conf.midiDeviceInput
-
-#depr?
 #keep for now, to be able to set config to the actual midi channel, and not 0-15
 def getMIDIInputChannel():
 	#todo: defaults?, 0?
 	return conf.midiChannelInput-1
-
-# def createOSCMessage(address, val):
-# 	oscMsg = OSC.OSCMessage()
-# 	oscMsg.setAddress(address)
-# 	oscMsg.append(float(val))
-# 	return oscMsg
-
-# def getType(midiNum, midiType):
-# 	midiEventEvent = MidiEvent(midiNum,midiType).type
-# 	if(midiEventEvent is None):
-# 		midiEventEvent = ''
-# 	return midiEventEvent
-	#return MidiEvent(midiNum,midiType).type
-
-# def getAttribute(midiNum, midiType):
-# 	midiEventAttribute = MidiEvent(midiNum,midiType).attribute
-# 	if(midiEventAttribute is None):
-# 		midiEventAttribute = 'value'
-# 	return midiEventAttribute
-
-# def getCommand(midiNum, midiType):
-# 	if(getType(midiNum, midiType) == 'command'):
-# 		return MidiEvent(midiNum,midiType).command
-# 	else:
-# 		return 0
 
 #generic handler?
 def mtoAction(midiNum, midiValue, midiType):
@@ -117,32 +86,11 @@ def mtoCommand(midiNum, midiValue, midiType):
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
 
-
-
-#depr, use generic Event-function
-# def getOSCAddress(midiNum, midiType):
-# 	return getEventAddress(midiNum, midiType)
-
-#depr, use generic Event-function
-# def getOSCValue(midiNum, midiValue, midiType):
-# 	return getEventValue(midiNum, midiValue, midiType)
-
-#depr, use generic Event-function
-# def getHTTPAddress(midiNum, midiType):
-# 	return getEventAddress(midiNum, midiType)
-
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
 	valAttr = MidiEvent(midiNum, midiType).attribute
 	if (valAttr is None):
 		valAttr = 'value'
 	return valAttr
-
-#depr, use generic Event-function
-# def getHTTPValue(midiNum, midiValue, midiType):
-# 	#valMin = float(MidiEvent(midiNum,midiType).min)
-# 	#valMax = float(MidiEvent(midiNum,midiType).max)
-# 	#return (valMax-valMin)/127.0*midiValue+valMin
-# 	return getEventValue(midiNum, midiValue, midiType)
 
 #todo: implement scaling options for lin/log/exp
 #already defined in config-file and configHandler
@@ -221,7 +169,9 @@ def isDefinedMidi(msg):
 				return True
 	return False
 
-#debugCommands()
+if(conf.debug == 1):
+	debugCommands()
+
 with mido.open_input(conf.midiDeviceInput) as inport:
 	for msg in inport:
 		if(isDefinedMidi(msg)):
