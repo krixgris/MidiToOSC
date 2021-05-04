@@ -18,20 +18,13 @@ http = httpHandler.httpHandler()
 
 def MidiEvent(midiNum, midiType):
 	midiNum = str(midiNum)
+
 	if (midiType == 'control_change'):
-		if(conf.control_change.get(midiNum) is None):
-			return configHandler.MidiEvent(conf.dummy_midievent)
 		midiEvent = configHandler.MidiEvent(conf.control_change.get(midiNum))
 	if (midiType == 'note_on'):
-		if(conf.note_on.get(midiNum) is None):
-			return configHandler.MidiEvent(conf.dummy_midievent)
 		midiEvent = configHandler.MidiEvent(conf.note_on.get(midiNum))
 	if (midiType == 'note_off'):
-		if(conf.note_on.get(midiNum) is None):
-			return configHandler.MidiEvent(conf.dummy_midievent)
-		midiEvent = configHandler.MidiEvent(conf.note_on.get(midiNum))
-	if(midiEvent is None):
-		return configHandler.MidiEvent(conf.dummy_midievent)
+		midiEvent = configHandler.MidiEvent(conf.note_off.get(midiNum))
 	return midiEvent
 
 def reloadConfig():
@@ -40,19 +33,11 @@ def reloadConfig():
 	reconnectOSC()
 	reconnectHTTP()
 	print(str(datetime.now()) + " Configuration updated")
-	print conf
+	print conf.config_json
 
 def quitViolently():
 	print "Quitting violently!"
 	quit()
-
-#reads configuration from oscconfig.json in the same dir as the python-script
-#can be read while running to reconfigure parameters
-#def readConfig(fileName):
-#	f = open(fileName)
-#	data = json.load(f)
-#	f.close()
-#	return data
 
 #reconnects the OSC object to ip/port in config
 def reconnectOSC():
@@ -93,8 +78,10 @@ def getAttribute(midiNum, midiType):
 
 
 def mtoAction(midiNum, midiValue, midiType):
-	#print getType(midiNum, midiType)
+	print midiNum, midiValue, midiType
+	print getType(midiNum, midiType)
 	if(getType(midiNum, midiType) == 'osc'):
+		print 'osc'
 		mtoOSC(midiNum, midiValue, midiType)
 		return 1
 	if(getType(midiNum,midiType) == 'command'):
@@ -209,18 +196,38 @@ def debugCommands():
 	mtoAction(22,127,'control_change')
 	mtoAction(61,127,'note_on')
 
+	mtoAction(52,127,'control_change')
+	mtoAction(22,127,'control_change')
+
+	print MidiEvent(22, 'control_change')
+	print MidiEvent(52, 'control_change')
+	print MidiEvent(121, 'control_change').max
+	#print conf
+
+	print type(conf.debug)
+	print type(conf.port)
+	print type(conf.IP)
+
+	print type(MidiEvent(22, 'control_change').max)
+	print type(MidiEvent(52, 'control_change').max)
+	print MidiEvent(52, 'control_change').max
+	print type(MidiEvent(121, 'control_change').max)
+	midiEvent = configHandler.MidiEvent(conf.control_change.get("52"))
+	print midiEvent
+
 
 reloadConfig()
 
 reconnectOSC()
 reconnectHTTP()
 
-print conf.IP
-print conf.port
-print conf
+#print conf.IP
+#print conf.port
+#print conf.getConfig()#
+#print conf.config_json
 #print dir(conf)
 
-osc.connect((str(conf.IP),int(conf.port)))
+#osc.connect((str(conf.IP),int(conf.port)))
 
 print ""
 print "Available MIDI Inputs: "
@@ -232,25 +239,55 @@ print conf.midiDeviceInput
 print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
 print conf.midiChannelInput
 
-#mtoAction(52,127,'control_change')
-mtoAction(22,127,'control_change')
+#print MidiEvent(52, 'control_change')
+
+# print type(definedMidi)
+# for mtype in definedMidi:
+#     if mtype in conf.definedMidi.keys():
+#         print mtype
+#         for mnum in filter(lambda mnum: mnum in conf.definedMidi[mtype], definedMidi[mtype]):
+#             #if mnum in conf.definedMidi[mtype]
+#             print type(mnum)
+#             print mnum
+
+def isDefinedMidiLookup(midiNum, midiType, midiCh = -1):
+    if(midiCh == conf.midiChannelInput or midiCh == -1):
+        if(midiType in conf.definedMidi.keys()):
+            if(midiNum in conf.definedMidi[midiType]):
+                return True
+    return False
+
+def getMidiValue(msg):
+	if(msg.type == 'control_change'):
+		return msg.value
+	if(msg.type == 'note_on' or msg.type == 'note_off'):
+		return msg.velocity
+	return -1
+
+def getMidiNum(msg):
+	if(msg.type == 'control_change'):
+		return msg.control
+	if(msg.type == 'note_on' or msg.type == 'note_off'):
+		return msg.note
+	return -1
+
+def isDefinedMidi(msg):
+	#print getattr(msg, 'channel', None)
+	if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
+    #if(midiCh == conf.midiChannelInput or midiCh == -1):
+		#print msg.type
+		if(msg.type in conf.definedMidi.keys()):
+			#print getMidiNum(msg)
+			#print getMidiValue(msg)
+			if(getMidiNum(msg) in conf.definedMidi[msg.type]):
+				return True
+	return False
 
 #debugCommands()
 with mido.open_input(conf.midiDeviceInput) as inport:
 	for msg in inport:
-		if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
-			if(msg.type == 'control_change'):
-				mtoAction(msg.control, msg.value, msg.type)
-			if(msg.type == 'note_on'):
-				mtoAction(msg.note, msg.velocity, msg.type)
-			#debug handling to control print
-			#print(msg)
-		#'panic' reconfigure listen to any note_on events at velocity 126
-		# very temporary
-		if(msg.type == 'note_on' and msg.velocity == 126):
-			reloadConfig()
+		if(isDefinedMidi(msg)):
+			mtoAction(getMidiNum(msg), getMidiValue(msg), msg.type)
+		#debug handling to control print
 		#print(msg)
-			#quitViolently()
-			#print "quit() called, ending listening loop"
-			#quit()
 			
