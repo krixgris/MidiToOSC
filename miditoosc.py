@@ -18,7 +18,6 @@ http = httpHandler.httpHandler()
 
 #generic MidiEvent-getter, can replace getAttribute/Type/Command etc
 #returns a configHandler.MidiEvent
-
 def MidiEvent(midiNum, midiType):
 	#with no parameters, configHandler.MidiEvent() returns a dummy event
 	midiEvent = configHandler.MidiEvent()
@@ -70,41 +69,36 @@ def createOscMessage(address, val):
 	return oscMsg
 
 def getType(midiNum, midiType):
-	mtoType = MidiEvent(midiNum,midiType).type
-	if(mtoType is None):
-		mtoType = ''
-	return mtoType
+	midiEventEvent = MidiEvent(midiNum,midiType).type
+	if(midiEventEvent is None):
+		midiEventEvent = ''
+	return midiEventEvent
 	#return MidiEvent(midiNum,midiType).type
 
 def getAttribute(midiNum, midiType):
-	mtoType = MidiEvent(midiNum,midiType).attribute
-	if(mtoType is None):
-		mtoType = 'value'
-	return mtoType
-
+	midiEventAttribute = MidiEvent(midiNum,midiType).attribute
+	if(midiEventAttribute is None):
+		midiEventAttribute = 'value'
+	return midiEventAttribute
 
 #generic handler?
 def mtoAction(midiNum, midiValue, midiType):
 	#print midiNum, midiValue, midiType
 	#print getType(midiNum, midiType)
-	if(getType(midiNum, midiType) == 'osc'):
+	midiEventType = MidiEvent(midiNum, midiType).type
+	if(midiEventType == 'osc'):
 		mtoOSC(midiNum, midiValue, midiType)
-		return 0
-	if(getType(midiNum,midiType) == 'command'):
-		if(getCommand(midiNum, midiType) == 'reloadConfig'):
-			reloadConfig()
-		if(getCommand(midiNum, midiType) == 'quitLoop'):
-			quitViolently()
-		return 0
-	if(getType(midiNum, midiType) == 'http'):
+	if(midiEventType == 'http'):
 		mtoHTTP(midiNum, midiValue, midiType)
-		return 0
-	return -1
+	if(midiEventType == 'command'):
+		mtoCommand(midiNum, midiValue, midiType)
 
-#implement to run custom commands such as reload/quit etc..
-#similar to mtoAction()
 def mtoCommand(midiNum, midiValue, midiType):
-	pass
+	midiEventCommand = MidiEvent(midiNum, midiType).command
+	if(midiEventCommand == 'reloadConfig'):
+		reloadConfig()
+	if(midiEventCommand == 'quitLoop'):
+		quitViolently()
 
 def mtoOSC(midiNum, midiValue, midiType):
 	osc.send(getOscMessage(midiNum, midiValue, midiType))
@@ -122,18 +116,18 @@ def getCommand(midiNum, midiType):
 	else:
 		return 0
 
+#depr, use generic Event-function
 def getOSCAddress(midiNum, midiType):
-	oscaddress = MidiEvent(midiNum,midiType).address
-	return oscaddress
+	return getEventAddress(midiNum, midiType)
 
+#depr, use generic Event-function
 def getOSCValue(midiNum, midiValue, midiType):
-	oscMin = float(MidiEvent(midiNum,midiType).min)
-	oscMax = float(MidiEvent(midiNum,midiType).max)
-	return (oscMax-oscMin)/127.0*midiValue+oscMin
+	return getEventValue(midiNum, midiValue, midiType)
 
+#depr, use generic Event-function
 def getHTTPAddress(midiNum, midiType):
-	address = MidiEvent(midiNum,midiType).address
-	return address
+	# address = MidiEvent(midiNum,midiType).address
+	return getEventAddress(midiNum, midiType)
 
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
 	valAttr = getAttribute(midiNum, midiType)
@@ -143,10 +137,21 @@ def getHTTPValueAttribute(midiNum, midiValue, midiType):
 	#valMax = float(config['oscConfig'][str(midiType)][str(midiNum)]['max'])
 	return valAttr
 
+#depr, use generic Event-function
 def getHTTPValue(midiNum, midiValue, midiType):
+	#valMin = float(MidiEvent(midiNum,midiType).min)
+	#valMax = float(MidiEvent(midiNum,midiType).max)
+	#return (valMax-valMin)/127.0*midiValue+valMin
+	return getEventValue(midiNum, midiValue, midiType)
+
+def getEventValue(midiNum, midiValue, midiType):
 	valMin = float(MidiEvent(midiNum,midiType).min)
 	valMax = float(MidiEvent(midiNum,midiType).max)
 	return (valMax-valMin)/127.0*midiValue+valMin
+
+def getEventAddress(midiNum, midiType):
+	address = MidiEvent(midiNum,midiType).address
+	return address
 
 """ 
     float oscVal = (float) oscUIDial.getValue();
