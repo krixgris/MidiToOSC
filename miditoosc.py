@@ -16,8 +16,15 @@ conf = configHandler.configHandler(configFile=configFile)
 osc = OSC.OSCClient()
 http = httpHandler.httpHandler()
 
+# MidiEventList = dict()
+# for midiType in conf.definedMidi:
+#     MidiEventList[midiType] = dict()
+#     for midiNum in conf.definedMidi[midiType]:
+# 		MidiEventList[midiType][midiNum] = MidiEvent(midiNum,midiType)
+
 #generic MidiEvent-getter, can replace getAttribute/Type/Command etc
 #returns a configHandler.MidiEvent
+
 def MidiEvent(midiNum, midiType):
 	#with no parameters, configHandler.MidiEvent() returns a dummy event
 	midiEvent = configHandler.MidiEvent()
@@ -28,6 +35,7 @@ def MidiEvent(midiNum, midiType):
 	if (midiType == 'note_off'):
 		midiEvent = configHandler.MidiEvent(conf.note_off.get(midiNum))
 	return midiEvent
+
 
 #add support for loading custom config via config-parameters configName='oscConfig', configFile='oscconfig.json' ?
 def reloadConfig():
@@ -61,7 +69,9 @@ def getMIDIInputChannel():
 def mtoAction(midiNum, midiValue, midiType):
 	#print midiNum, midiValue, midiType
 	#print getType(midiNum, midiType)
-	midiEventType = MidiEvent(midiNum, midiType).type
+	
+	#midiEventType = MidiEvent(midiNum, midiType).type
+	midiEventType = conf.MidiEventList[midiType][midiNum].type
 	if(midiEventType == 'osc'):
 		mtoOSC(midiNum, midiValue, midiType)
 	if(midiEventType == 'http'):
@@ -80,14 +90,17 @@ def mtoHTTP(midiNum, midiValue, midiType):
 	http.patchData(getEventAddress(midiNum,midiType), data)
 
 def mtoCommand(midiNum, midiValue, midiType):
-	midiEventCommand = MidiEvent(midiNum, midiType).command
+	#midiEventCommand = MidiEvent(midiNum, midiType).command
+	midiEventCommand = conf.MidiEventList[midiType][midiNum].command
+	conf.MidiEventList[midiType][midiNum]
 	if(midiEventCommand == 'reloadConfig'):
 		reloadConfig()
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
 
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
-	valAttr = MidiEvent(midiNum, midiType).attribute
+	# valAttr = MidiEvent(midiNum, midiType).attribute
+	valAttr = conf.MidiEventList[midiType][midiNum].attribute
 	if (valAttr is None):
 		valAttr = 'value'
 	return valAttr
@@ -95,12 +108,15 @@ def getHTTPValueAttribute(midiNum, midiValue, midiType):
 #todo: implement scaling options for lin/log/exp
 #already defined in config-file and configHandler
 def getEventValue(midiNum, midiValue, midiType):
-	valMin = float(MidiEvent(midiNum,midiType).min)
-	valMax = float(MidiEvent(midiNum,midiType).max)
+	# valMin = float(MidiEvent(midiNum,midiType).min)
+	# valMax = float(MidiEvent(midiNum,midiType).max)
+	valMin = float(conf.MidiEventList[midiType][midiNum].min)
+	valMax = float(conf.MidiEventList[midiType][midiNum].max)
 	return (valMax-valMin)/127.0*midiValue+valMin
 
 def getEventAddress(midiNum, midiType):
-	address = MidiEvent(midiNum,midiType).address
+	# address = MidiEvent(midiNum,midiType).address
+	address = conf.MidiEventList[midiType][midiNum].address
 	return address
 
 #	copy pasted code from c++-plugin with tests of exponential scaling
