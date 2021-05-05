@@ -53,10 +53,12 @@ class configHandler:
 					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
 		self.MidiEventList = MidiEventList
 
+		self.configfile = configFile
+
 # configHandler.MidiEvent(conf.control_change.get(midiNum))
 
 
 	def __str__(self):
-		return str(self.__class__) + ": " + str(self.__dict__)
+		return str(self.__class__) + ": " + str(self.configfile)
 	def __repr__(self):
 		return str(self.__class__) + ": " + str(self.__dict__)

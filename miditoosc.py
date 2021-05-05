@@ -112,7 +112,21 @@ def getEventValue(midiNum, midiValue, midiType):
 	# valMax = float(MidiEvent(midiNum,midiType).max)
 	valMin = float(conf.MidiEventList[midiType][midiNum].min)
 	valMax = float(conf.MidiEventList[midiType][midiNum].max)
-	return (valMax-valMin)/127.0*midiValue+valMin
+	valScaling = conf.MidiEventList[midiType][midiNum].valueScaling
+	valScalingBase = conf.MidiEventList[midiType][midiNum].valueScalingBase
+
+	if(valScaling == 'exp'):	
+		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/127.0))-1)/(valScalingBase-1)+valMin
+	#not yet implemented, so placeholder formula as exp
+	elif(valScaling == 'log'):
+		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/127.0))-1)/(valScalingBase-1)+valMin
+	else:#calculate linearly unless exp or log is defined
+		if(midiValue == 0):
+			eventValue = valMin
+		else:
+			eventValue = (valMax-valMin)/127.0*(midiValue+valMin)
+
+	return eventValue
 
 def getEventAddress(midiNum, midiType):
 	# address = MidiEvent(midiNum,midiType).address
@@ -142,7 +156,16 @@ def debugCommands():
 	print ''
 	print 'Debug messages from debugCommand():'
 	print ''
+	# mtoAction(80,0,'control_change')
 
+	mtoAction(80,0,'control_change')
+	mtoAction(80,1,'control_change')
+	mtoAction(80,2,'control_change')
+	mtoAction(80,3,'control_change')
+	mtoAction(80,4,'control_change')
+	mtoAction(80,5,'control_change')
+	mtoAction(80,6,'control_change')
+	mtoAction(80,127,'control_change')
 
 reloadConfig()
 
