@@ -4,6 +4,8 @@
 import mido
 import OSC
 import json
+import math
+
 from datetime import datetime
 
 import configHandler
@@ -115,11 +117,12 @@ def getEventValue(midiNum, midiValue, midiType):
 	valScaling = conf.MidiEventList[midiType][midiNum].valueScaling
 	valScalingBase = conf.MidiEventList[midiType][midiNum].valueScalingBase
 
+	#value scaling base for log/exp of 20 seems okay for most things so far.
+
 	if(valScaling == 'exp'):	
 		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/127.0))-1)/(valScalingBase-1)+valMin
-	#not yet implemented, so placeholder formula as exp
 	elif(valScaling == 'log'):
-		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/127.0))-1)/(valScalingBase-1)+valMin
+		eventValue = (valMax-valMin)*(math.log(1 + (scaleBase-1)*midiValue/127.0)/math.log(scaleBase))+valMin
 	else:#calculate linearly unless exp or log is defined
 		if(midiValue == 0):
 			eventValue = valMin
