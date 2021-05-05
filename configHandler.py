@@ -41,6 +41,20 @@ class configHandler:
 
         self.definedMidi = {'control_change':self.control_change.keys(), 'note_on':self.note_on.keys(), 'note_off':self.note_off.keys()}
         
+		MidiEventList = dict()
+		for midiType in self.definedMidi:
+			MidiEventList[midiType] = dict()
+			for midiNum in self.definedMidi[midiType]:
+				if(midiType == 'control_change'):
+					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
+				if midiType == 'note_on':
+					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
+				if(midiType == 'note_off'):
+					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
+		self.MidiEventList = MidiEventList
+
+# configHandler.MidiEvent(conf.control_change.get(midiNum))
+
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
