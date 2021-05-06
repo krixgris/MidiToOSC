@@ -8,6 +8,8 @@ import math
 
 from datetime import datetime
 
+import easingalgos as easing
+
 import configHandler
 import httpHandler
 
@@ -126,24 +128,95 @@ def getHTTPValueAttribute(midiNum, midiValue, midiType):
 		valAttr = 'value'
 	return valAttr
 
+def getValueScale(algorithm, value, base = 1):
+	scale = 1.0
+	#easeInCirc works great for motu 828 es volume
+
+	if algorithm == 'exp':
+		scale = (pow(base,value)-1)/(base-1)
+	elif algorithm == 'log':
+		scale = (math.log(1 + (base-1)*value)/math.log(base))
+	
+	elif (algorithm == 'easeInSine'):
+		scale = easing.easeInSine(value)
+	elif (algorithm == 'easeInCubic'):
+		scale = easing.easeInCubic(value)
+	elif (algorithm == 'easeInQuint'):
+		scale = easing.easeInQuint(value)
+	elif (algorithm == 'easeInCirc'):
+		scale = easing.easeInCirc(value)
+	elif (algorithm == 'easeInQuad'):
+		scale = easing.easeInQuad(value)
+	elif (algorithm == 'easeInQuart'):
+		scale = easing.easeInQuart(value)
+	elif (algorithm == 'easeInExpo'):
+		scale = easing.easeInExpo(value)
+
+	elif (algorithm == 'easeOutSine'):
+		scale = easing.easeOutSine(value)
+	elif (algorithm == 'easeOutCubic'):
+		scale = easing.easeOutCubic(value)
+	elif (algorithm == 'easeOutQuint'):
+		scale = easing.easeOutQuint(value)
+	elif (algorithm == 'easeOutCirc'):
+		scale = easing.easeOutCirc(value)
+	elif (algorithm == 'easeOutQuad'):
+		scale = easing.easeOutQuad(value)
+	elif (algorithm == 'easeOutQuart'):
+		scale = easing.easeOutQuart(value)
+	elif (algorithm == 'easeOutExpo'):
+		scale = easing.easeOutExpo(value)
+
+	elif (algorithm == 'easeInOutSine'):
+		scale = easing.easeInOutSine(value)
+	elif (algorithm == 'easeInOutCubic'):
+		scale = easing.easeInOutCubic(value)
+	elif (algorithm == 'easeInOutQuint'):
+		scale = easing.easeInOutQuint(value)
+	elif (algorithm == 'easeInOutCirc'):
+		scale = easing.easeInOutCirc(value)
+	elif (algorithm == 'easeInOutQuad'):
+		scale = easing.easeInOutQuad(value)
+	elif (algorithm == 'easeInOutQuart'):
+		scale = easing.easeInOutQuart(value)
+	elif (algorithm == 'easeInOutExpo'):
+		scale = easing.easeInOutExpo(value)
+
+	elif (algorithm == 'easeInBounce'):
+		scale = easing.easeInBounce(value)
+	elif (algorithm == 'easeOutBounce'):
+		scale = easing.easeOutBounce(value)
+	elif (algorithm == 'easeInOutBounce'):
+		scale = easing.easeInOutBounce(value)
+		
+	return scale
+
+
+
 def getEventValue(midiNum, midiValue, midiType):
 	valMin = float(conf.MidiEventList[midiType][midiNum].min)
 	valMax = float(conf.MidiEventList[midiType][midiNum].max)
 	valScaling = conf.MidiEventList[midiType][midiNum].valueScaling
 	valScalingBase = conf.MidiEventList[midiType][midiNum].valueScalingBase
 
+	if valScaling is None:
+		valScaling = 'lin'
+		valScalingBase = 1
 	#value scaling base for log/exp of 20 seems okay for most things so far
 	#definitely try different bases for your particular application
-	if(valScaling == 'exp'):	
-		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/midiMaxValue))-1)/(valScalingBase-1)+valMin
-	elif(valScaling == 'log'):
-		eventValue = (valMax-valMin)*(math.log(1 + (scaleBase-1)*midiValue/midiMaxValue)/math.log(scaleBase))+valMin
-	else:
-		#calculate linearly unless exp or log is defined
-		if(midiValue == 0):
-			eventValue = valMin
-		else:
-			eventValue = (valMax-valMin)/midiMaxValue*(midiValue+valMin)
+	# if(valScaling == 'exp'):	
+	# 	eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/midiMaxValue))-1)/(valScalingBase-1)+valMin
+	# elif(valScaling == 'log'):
+	# 	eventValue = (valMax-valMin)*(math.log(1 + (scaleBase-1)*midiValue/midiMaxValue)/math.log(scaleBase))+valMin
+	# else:
+	# 	#calculate linearly unless exp or log is defined
+	# 	if(midiValue == 0):
+	# 		eventValue = valMin
+	# 	else:
+	# 		eventValue = (valMax-valMin)/midiMaxValue*(midiValue+valMin)
+
+	value = midiValue/midiMaxValue
+	eventValue = (valMax-valMin)*getValueScale(valScaling, value, valScalingBase)+valMin
 
 	return eventValue
 

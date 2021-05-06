@@ -66,7 +66,7 @@
                 "address":"/mix/aux/4/matrix/fader",
                 "min":0.0,
                 "max":4.0,
-				"valueScaling":"exp",
+				"valueScaling":"easeInCirc",
 				"valueScalingBase":20
             }
             ,
