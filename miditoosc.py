@@ -11,12 +11,22 @@ from datetime import datetime
 import configHandler
 import httpHandler
 
+#region GLOBALS
 
+#can be set to anything you want
 configFile = 'oscconfig.json'
-conf = configHandler.configHandler(configFile=configFile)
+# constant for doing calculations for scaling values
+# keep note this is 7-bit midi only, no support for nrpn midi yet
+midiMaxValue = 127.0
 
+
+conf = configHandler.configHandler(configFile=configFile)
 osc = OSC.OSCClient()
 http = httpHandler.httpHandler()
+#endregion
+
+
+
 
 # MidiEventList = dict()
 # for midiType in conf.definedMidi:
@@ -27,6 +37,7 @@ http = httpHandler.httpHandler()
 #generic MidiEvent-getter, can replace getAttribute/Type/Command etc
 #returns a configHandler.MidiEvent
 
+#deprecated function. still works, but very inefficient
 def MidiEvent(midiNum, midiType):
 	#with no parameters, configHandler.MidiEvent() returns a dummy event
 	midiEvent = configHandler.MidiEvent()
@@ -39,6 +50,7 @@ def MidiEvent(midiNum, midiType):
 	return midiEvent
 
 
+#region Internal Commands that can be used for mtoCommand()
 #add support for loading custom config via config-parameters configName='oscConfig', configFile='oscconfig.json' ?
 def reloadConfig():
 	global conf
@@ -54,25 +66,26 @@ def quitViolently():
 	print "Quitting violently!"
 	quit()
 
+#endregion
+
+
 #reconnects the OSC object to ip/port in config
 def reconnectOSC():
 	osc.connect((conf.IP,conf.port))
-
+#reconnects HTTP object. in reality just sets the IP to connect to when message is sent
+#rename?
 def reconnectHTTP():
 	http.setIP(conf.IP)
 
-#depr?
-#keep for now, to be able to set config to the actual midi channel, and not 0-15
+#simply returns midi channel in a -1 way to 'correct' 0 index values, which may confuse a user for debugging purposes
+#inconsistent use throughout, may re-evaluate
 def getMIDIInputChannel():
 	#todo: defaults?, 0?
 	return conf.midiChannelInput-1
 
+#region Handlers for events
 #generic handler?
 def mtoAction(midiNum, midiValue, midiType):
-	#print midiNum, midiValue, midiType
-	#print getType(midiNum, midiType)
-	
-	#midiEventType = MidiEvent(midiNum, midiType).type
 	midiEventType = conf.MidiEventList[midiType][midiNum].type
 	if(midiEventType == 'osc'):
 		mtoOSC(midiNum, midiValue, midiType)
@@ -84,6 +97,9 @@ def mtoAction(midiNum, midiValue, midiType):
 def mtoOSC(midiNum, midiValue, midiType):
 	osc.send(getOSCMessage(midiNum, midiValue, midiType))
 
+#implement sending json of multiple values?
+#maybe?
+#maybe extension of handling multiple events per incoming midi uses json instead of multiple events for http for performance
 def mtoHTTP(midiNum, midiValue, midiType):
 	#http can technically send batches of data with json, but only one parameter is currently supported
 	data = http.getValueList(getHTTPValueAttribute(midiNum,midiValue,midiType), getEventValue(midiNum,midiValue,midiType))
@@ -92,13 +108,16 @@ def mtoHTTP(midiNum, midiValue, midiType):
 	http.patchData(getEventAddress(midiNum,midiType), data)
 
 def mtoCommand(midiNum, midiValue, midiType):
-	#midiEventCommand = MidiEvent(midiNum, midiType).command
 	midiEventCommand = conf.MidiEventList[midiType][midiNum].command
 	conf.MidiEventList[midiType][midiNum]
 	if(midiEventCommand == 'reloadConfig'):
 		reloadConfig()
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
+
+#endregion
+
+#region Helper functions for getting attributes for mtoEventhandlers
 
 def getHTTPValueAttribute(midiNum, midiValue, midiType):
 	# valAttr = MidiEvent(midiNum, midiType).attribute
@@ -107,45 +126,30 @@ def getHTTPValueAttribute(midiNum, midiValue, midiType):
 		valAttr = 'value'
 	return valAttr
 
-#todo: implement scaling options for lin/log/exp
-#already defined in config-file and configHandler
 def getEventValue(midiNum, midiValue, midiType):
-	# valMin = float(MidiEvent(midiNum,midiType).min)
-	# valMax = float(MidiEvent(midiNum,midiType).max)
 	valMin = float(conf.MidiEventList[midiType][midiNum].min)
 	valMax = float(conf.MidiEventList[midiType][midiNum].max)
 	valScaling = conf.MidiEventList[midiType][midiNum].valueScaling
 	valScalingBase = conf.MidiEventList[midiType][midiNum].valueScalingBase
 
-	#value scaling base for log/exp of 20 seems okay for most things so far.
-
+	#value scaling base for log/exp of 20 seems okay for most things so far
+	#definitely try different bases for your particular application
 	if(valScaling == 'exp'):	
-		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/127.0))-1)/(valScalingBase-1)+valMin
+		eventValue = (valMax-valMin)*(pow(valScalingBase,(midiValue/midiMaxValue))-1)/(valScalingBase-1)+valMin
 	elif(valScaling == 'log'):
-		eventValue = (valMax-valMin)*(math.log(1 + (scaleBase-1)*midiValue/127.0)/math.log(scaleBase))+valMin
-	else:#calculate linearly unless exp or log is defined
+		eventValue = (valMax-valMin)*(math.log(1 + (scaleBase-1)*midiValue/midiMaxValue)/math.log(scaleBase))+valMin
+	else:
+		#calculate linearly unless exp or log is defined
 		if(midiValue == 0):
 			eventValue = valMin
 		else:
-			eventValue = (valMax-valMin)/127.0*(midiValue+valMin)
+			eventValue = (valMax-valMin)/midiMaxValue*(midiValue+valMin)
 
 	return eventValue
 
 def getEventAddress(midiNum, midiType):
-	# address = MidiEvent(midiNum,midiType).address
 	address = conf.MidiEventList[midiType][midiNum].address
 	return address
-
-#	copy pasted code from c++-plugin with tests of exponential scaling
-#
-#     float oscVal = (float) oscUIDial.getValue();
-#     float oscScaled = 4*(1 - (log(oscVal)/log(0.0001)));
-#    // float oscScaled = 4*(exp(oscVal)-1)/(2.71828-1);
-#     float pwrOf = 200;
-#     //oscScaled = 4*oscUIDial.getValue();
-#     oscScaled = 4*(pow(pwrOf,oscVal)-1)/(pwrOf-1);
-#     oscSendEditor.send ("/mix/chan/35/matrix/fader", (float) oscScaled); 
-
 
 def getOSCMessage(midiNum, midiValue, midiType):
 	oscMsg = OSC.OSCMessage()
@@ -153,34 +157,9 @@ def getOSCMessage(midiNum, midiValue, midiType):
 	oscMsg.append(getEventValue(midiNum, midiValue, midiType))
 	return oscMsg
 
-#put debug messages to run on launch here
-#will only work if debug:1 is set in the json-config
-def debugCommands():
-	print ''
-	print 'Debug messages from debugCommand():'
-	print ''
-	# mtoAction(80,0,'control_change')
+#endregion
 
-	mtoAction(80,0,'control_change')
-	mtoAction(80,1,'control_change')
-	mtoAction(80,2,'control_change')
-	mtoAction(80,3,'control_change')
-	mtoAction(80,4,'control_change')
-	mtoAction(80,5,'control_change')
-	mtoAction(80,6,'control_change')
-	mtoAction(80,127,'control_change')
-
-reloadConfig()
-
-print ""
-print "Available MIDI Inputs: "
-print mido.get_input_names()
-print ""
-
-print "Listening on device: "
-print conf.midiDeviceInput
-print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
-print conf.midiChannelInput
+#region Helper functions for MIDI messages, including checks if event is defined
 
 #unused, probably getting removed
 def isDefinedMidiLookup(midiNum, midiType, midiCh = -1):
@@ -211,14 +190,66 @@ def isDefinedMidi(msg):
 				return True
 	return False
 
+#endregion
+
+#region debug functions
+#put debug messages to run on launch here
+#will only work if debug:1 is set in the json-config
+def debugCommands():
+	print ''
+	print 'Debug messages from debugCommand():'
+	print ''
+	# mtoAction(80,0,'control_change')
+
+	mtoAction(80,0,'control_change')
+	mtoAction(80,1,'control_change')
+	mtoAction(80,2,'control_change')
+	mtoAction(80,3,'control_change')
+	mtoAction(80,4,'control_change')
+	mtoAction(80,5,'control_change')
+	mtoAction(80,6,'control_change')
+	mtoAction(80,127,'control_change')
+#endregion
+
+#region Inits
+
+#reloads config, which also sets connections for http, osc
+#entire config object is re-initialized
+
+reloadConfig()
+
+#use the information provided from the output here if you struggle with finding a working midi device
+#
+#for future development, mido.get_output_names() would be useful to add here
+print ""
+print "Available MIDI Inputs: "
+print mido.get_input_names()
+print ""
+
+print "Listening on device: "
+print conf.midiDeviceInput
+print "Listening on channel (0-15), i.e. 0 = midi 1, 15 = midi 16 etc: "
+print conf.midiChannelInput
+
+#debug things here
 if(conf.debug == 1):
 	debugCommands()
+
+#endregion
+
+#region main loop
 
 with mido.open_input(conf.midiDeviceInput) as inport:
 	for msg in inport:
 		if(isDefinedMidi(msg)):
 			mtoAction(getMidiNum(msg), getMidiValue(msg), msg.type)
-		#debug handling to control print
-		
-		if(conf.debug == 1):
-			print(msg)
+			if(conf.debug == 1):
+				print "Handled MIDI:"
+				print(msg)
+		else:
+			#debug handling to control printing of messages
+			#ALL messages gets printed here
+			if(conf.debug == 1):
+				print "Unhandled MIDI:"
+				print(msg)
+#endregion
