@@ -217,7 +217,8 @@ def getEventValue(midiNum, midiValue, midiType):
 
 	value = midiValue/midiMaxValue
 	eventValue = (valMax-valMin)*getValueScale(valScaling, value, valScalingBase)+valMin
-
+	if (midiValue == 0):
+		eventValue = valMin
 	return eventValue
 
 def getEventAddress(midiNum, midiType):
