@@ -20,6 +20,11 @@ class MidiEvent:
 		self.multi = midiEvent.get('multi',1)
 		self.valueScaling = midiEvent.get('valueScaling','lin')
 		self.valueScalingBase = midiEvent.get('valueScalingBase',10)
+		self.throttling = midiEvent.get('throttling',1)#throttling of values on by default
+		self.prevValue = -1 #0-127 7-bit values 
+		self.prevTime = 0 #time of execution will be stored from time.time()
+
+
 	def __str__(self):
 			return str(self.__class__) + ": " + str(self.__dict__)
 	def __repr__(self):

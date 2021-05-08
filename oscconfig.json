@@ -10,6 +10,7 @@
         "midiChannelInput":5,
         "httpTimeoutMS":500,
         "debug":0,
+		"globalThrottleOverride":1,
         "control_change":
         {
 			"21":

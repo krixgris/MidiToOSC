@@ -5,6 +5,7 @@ import mido
 import OSC
 import json
 import math
+import time
 
 from datetime import datetime
 
@@ -72,8 +73,8 @@ def reloadConfig():
 	#ugly, make a nicer result at some point?
 	print conf
 
-def quitViolently():
-	print "Quitting violently!"
+def quitViolently(message = 'Quitting violently!'):
+	print message
 	quit()
 
 #endregion
@@ -269,8 +270,39 @@ def isDefinedMidi(msg):
 	if(getattr(msg, 'channel', None)==getMIDIInputChannel()):
 		if(msg.type in conf.definedMidi.keys()):
 			if(getMidiNum(msg) in conf.definedMidi[msg.type]):
-				return True
+				if (conf.globalThrottleOverride == 1):
+					isValidMessage = doThrottle(getMidiNum(msg), getMidiValue(msg), msg.type)
+				else:
+					isValidMessage = True
+				return isValidMessage
 	return False
+
+def doThrottle(midiNum, midiValue, midiType):
+	global conf
+	# print conf.globalThrottleOverride
+	prevValue = conf.MidiEventList[midiType][midiNum].prevValue
+	prevTime = conf.MidiEventList[midiType][midiNum].prevTime
+	currTime = time.time()*1000
+	deltaTime = currTime-prevTime
+	deltaValue = abs(midiValue-prevValue)
+	if( (100>=deltaTime > 40 and deltaValue>20)
+		or (150>=deltaTime > 100 and deltaValue>4)
+		or (250>=deltaTime > 150 and deltaValue>2)
+		or (deltaTime > 250 and deltaValue>0)
+		or midiValue in [0,127]):
+		# print deltaTime
+		# print deltaValue
+		prevValue = conf.MidiEventList[midiType][midiNum].prevValue = midiValue
+		prevTime = conf.MidiEventList[midiType][midiNum].prevTime = currTime
+		return True
+
+	return False
+
+def isValidMidiInput(inputDevice):
+	if conf.midiDeviceInput in mido.get_input_names():
+		return 1
+	else:
+		return 0
 
 #endregion
 
@@ -321,17 +353,20 @@ if(conf.debug == 1):
 
 #region main loop
 
-with mido.open_input(conf.midiDeviceInput) as inport:
-	for msg in inport:
-		if(isDefinedMidi(msg)):
-			mtoAction(getMidiNum(msg), getMidiValue(msg), msg.type)
-			if(conf.debug == 1):
-				print "Handled MIDI:"
-				print(msg)
-		else:
-			#debug handling to control printing of messages
-			#ALL messages gets printed here
-			if(conf.debug == 1):
-				print "Unhandled MIDI:"
-				print(msg)
+if(isValidMidiInput(conf.midiDeviceInput)):
+	with mido.open_input(conf.midiDeviceInput) as inport:
+		for msg in inport:
+			if(isDefinedMidi(msg)):
+				mtoAction(getMidiNum(msg), getMidiValue(msg), msg.type)
+				if(conf.debug == 1):
+					print "Handled MIDI:"
+					print(msg)
+			else:
+				#debug handling to control printing of messages
+				#ALL messages gets printed here
+				if(conf.debug == 1):
+					print "Unhandled MIDI:"
+					print(msg)
+else:
+	quitViolently("MIDI Device could not be found, make sure config matches one of the available MIDI Inputs.")
 #endregion
