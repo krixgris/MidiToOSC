@@ -13,6 +13,14 @@ import easingalgos as easing
 import configHandler
 import httpHandler
 
+
+#region TODO
+#
+#	Feature to throttle events/actions for reicipients that can't handle them fast enough
+#	Example being Motu 828es which can't process OSC fast enough for a smooth experience, so throttling OSC being sent might help
+#endregion
+
+
 #region GLOBALS
 
 #can be set to anything you want
