@@ -6,7 +6,7 @@
         "laptopIP": "192.168.1.16",
         "motuIP": "192.168.1.167",
         "port": 9998,
-        "midiDeviceInput":"CME U2MIDI:CME U2MIDI MIDI 1 20:0",
+        "midiDeviceInput":"pisound:pisound MIDI PS-0M46XP2 20:0",
         "midiChannelInput":5,
         "httpTimeoutMS":500,
         "debug":0,
