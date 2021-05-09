@@ -17,8 +17,11 @@ import httpHandler
 
 #region TODO
 #
-#	Feature to throttle events/actions for reicipients that can't handle them fast enough
+#	Feature to throttle *individual* events/actions for reicipients that can't handle them fast enough
 #	Example being Motu 828es which can't process OSC fast enough for a smooth experience, so throttling OSC being sent might help
+#
+#	This is implemented on a global level now with the globalThrottleOverride 0..1 in the json-config
+#
 #endregion
 
 
