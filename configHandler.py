@@ -53,9 +53,9 @@ class configHandler:
 				if(midiType == 'control_change'):
 					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
 				if midiType == 'note_on':
-					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
+					MidiEventList[midiType][midiNum] = MidiEvent(self.note_on.get(midiNum))
 				if(midiType == 'note_off'):
-					MidiEventList[midiType][midiNum] = MidiEvent(self.control_change.get(midiNum))
+					MidiEventList[midiType][midiNum] = MidiEvent(self.note_off.get(midiNum))
 		self.MidiEventList = MidiEventList
 
 		self.configfile = configFile
