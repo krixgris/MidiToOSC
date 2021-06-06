@@ -6,6 +6,7 @@ import OSC
 import json
 import math
 import time
+import subprocess
 
 from datetime import datetime
 
@@ -82,6 +83,11 @@ def quitViolently(message = 'Quitting violently!'):
 	print message
 	quit()
 
+def runShellScript(shellScriptPath):
+	path = './scripts/' + shellScriptPath
+	print path
+	subprocess.call(['sh', path])
+
 #endregion
 
 
@@ -130,6 +136,8 @@ def mtoCommand(midiNum, midiValue, midiType):
 		reloadConfig()
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
+	if(midiEventCommand == 'shellscript'):
+		runShellScript()
 
 #endregion
 
