@@ -86,7 +86,7 @@ def quitViolently(message = 'Quitting violently!'):
 def runShellScript(shellScriptPath):
 	path = './scripts/' + shellScriptPath
 	print path
-	subprocess.call(['sh', path])
+	subprocess.call(['bash', path])
 
 #endregion
 
