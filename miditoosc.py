@@ -137,7 +137,7 @@ def mtoCommand(midiNum, midiValue, midiType):
 	if(midiEventCommand == 'quitLoop'):
 		quitViolently()
 	if(midiEventCommand == 'shellscript'):
-		runShellScript()
+		runShellScript(getEventAddress(midiNum, midiType))
 
 #endregion
 
